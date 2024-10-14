@@ -32,15 +32,24 @@ module.exports = server;
 
 // Export the handler for Netlify Functions
 module.exports.handler = async (event, context) => {
-  return new Promise((resolve, reject) => {
-    const request = event.Records[0].cf.request;
+  try {
+    // Check if event.Records exists and has at least one element
+    if (!Array.isArray(event.Records) || event.Records.length === 0) {
+      return { statusCode: 400, body: 'Invalid request format' };
+    }
+
+    const record = event.Records[0];
+    const request = record.cf.request;
     const uri = decodeURIComponent(request.uri.path);
-    
+
     if (uri.startsWith('/socket.io')) {
       // Handle Socket.IO requests here
-      resolve({ statusCode: 200, body: 'Socket.IO request handled' });
+      return { statusCode: 200, body: 'Socket.IO request handled' };
     } else {
-      resolve({ statusCode: 404, body: 'Not found' });
+      return { statusCode: 404, body: 'Not found' };
     }
-  });
+  } catch (error) {
+    console.error('Error handling function:', error);
+    return { statusCode: 500, body: 'Internal Server Error' };
+  }
 };
