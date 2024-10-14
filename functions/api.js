@@ -34,12 +34,22 @@ module.exports = server;
 module.exports.handler = async (event, context) => {
   try {
     // Check if event.Records exists and has at least one element
-    if (!Array.isArray(event.Records) || event.Records.length === 0) {
+    if (!Array.isArray(event.Records)) {
       return { statusCode: 400, body: 'Invalid request format' };
     }
 
     const record = event.Records[0];
-    const request = record.cf.request;
+    
+    // Try to access properties in order of preference
+    let request;
+    if (record.cf && record.cf.request) {
+      request = record.cf.request;
+    } else if (record.body && JSON.parse(record.body).cf && JSON.parse(record.body).cf.request) {
+      request = JSON.parse(record.body).cf.request;
+    } else {
+      return { statusCode: 400, body: 'Invalid request format' };
+    }
+
     const uri = decodeURIComponent(request.uri.path);
 
     if (uri.startsWith('/socket.io')) {
