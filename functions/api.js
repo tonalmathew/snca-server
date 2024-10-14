@@ -3,9 +3,8 @@ const express = require('express');
 const { Server } = require('socket.io');
 
 const app = express();
-const server = express().createServer(app);
 
-const io = new Server(server, {
+const server = new Server(app, {
   cors: {
     origin: "*",
   },
@@ -26,4 +25,23 @@ io.on("connection", (socket) => {
 module.exports = server;
 
 // Export the handler for Netlify Functions
-module.exports.handler = serverless(server);
+module.exports.handler = async (event, context) => {
+  return new Promise((resolve, reject) => {
+    const request = event.Records[0].cf.request;
+    const uri = decodeURIComponent(request.uri.path);
+    
+    if (uri.startsWith('/socket.io')) {
+      const socketIoHandler = require('./socket-io-handler'); // Adjust the path as needed
+      
+      socketIoHandler.handleRequest(request, context, (err, response) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ statusCode: 200, body: response });
+        }
+      });
+    } else {
+      resolve({ statusCode: 404, body: 'Not found' });
+    }
+  });
+};
