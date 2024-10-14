@@ -4,7 +4,13 @@ const { Server } = require('socket.io');
 
 const app = express();
 
-const server = new Server(app, {
+// Create an HTTP server using Express
+const server = app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+
+// Initialize Socket.IO with the HTTP server
+const io = new Server(server, {
   cors: {
     origin: "*",
   },
@@ -31,15 +37,8 @@ module.exports.handler = async (event, context) => {
     const uri = decodeURIComponent(request.uri.path);
     
     if (uri.startsWith('/socket.io')) {
-      const socketIoHandler = require('./socket-io-handler'); // Adjust the path as needed
-      
-      socketIoHandler.handleRequest(request, context, (err, response) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({ statusCode: 200, body: response });
-        }
-      });
+      // Handle Socket.IO requests here
+      resolve({ statusCode: 200, body: 'Socket.IO request handled' });
     } else {
       resolve({ statusCode: 404, body: 'Not found' });
     }
